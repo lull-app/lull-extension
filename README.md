@@ -2,7 +2,7 @@
 
 > Earn while AI thinks. One quiet sponsor card during every AI wait state. You keep 70%.
 
-**[lull-app.github.io](https://lull-app.github.io)** · **[Install free →](https://github.com/lull-app/lull-extension-v2/releases)**
+**[lull-app.github.io](https://lull-app.github.io)** · **[Install free →](https://github.com/lull-app/lull-extension/releases)**
 
 ---
 
@@ -12,7 +12,7 @@ lull shows a single, non-intrusive sponsor card in the VS Code sidebar while Cla
 
 ## Install
 
-1. Download `lull-0.1.0.vsix` from [Releases](https://github.com/lull-app/lull-extension-v2/releases)
+1. Download `lull-0.1.0.vsix` from [Releases](https://github.com/lull-app/lull-extension/releases)
 2. In VS Code: `Extensions → ⋯ → Install from VSIX…`
 3. Click the lull icon in the Activity Bar
 

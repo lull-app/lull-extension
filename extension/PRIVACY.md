@@ -19,4 +19,4 @@ When no `lull.backendUrl` is configured, lull runs entirely offline. No data lea
 Run the command `lull: Reset my ID` from the Command Palette (⌘⇧P). A new random UUID is generated immediately.
 
 ## Source code
-All code is open source. Read it: https://github.com/lull-app/lull-extension-v2
+All code is open source. Read it: https://github.com/lull-app/lull-extension
