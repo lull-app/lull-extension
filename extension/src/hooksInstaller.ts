@@ -8,7 +8,6 @@ const HOOK_SCRIPT = path.join(HOOKS_DIR, 'activity.sh');
 const CLAUDE_DIR = path.join(os.homedir(), '.claude');
 const CLAUDE_SETTINGS = path.join(CLAUDE_DIR, 'settings.json');
 const SETTINGS_BACKUP = path.join(LULL_DIR, 'settings.backup.json');
-const HOOK_MARKER = '~/.lull/hooks/activity.sh';
 
 const HOOK_SCRIPT_CONTENT = `#!/bin/sh
 # lull activity signal - written by Claude Code lifecycle hooks.
@@ -50,12 +49,55 @@ export function installLullHooksAndSettings(spinnerVerb: string): void {
 }
 
 export function restoreClaudeSettings(): void {
+  // Surgically remove only lull's own footprint from the current settings,
+  // preserving every other key and any edits the user made after install.
+  // (Writing back a stale full backup would clobber those edits.) The one
+  // value lull overwrites destructively is spinnerVerbs, so that single key
+  // is recovered from the backup if we have one.
   if (!fs.existsSync(CLAUDE_SETTINGS)) return;
 
-  updateClaudeSettings(settings => {
-    removeLullHooks(settings);
-    delete settings.spinnerVerbs;
-  });
+  const settings = readClaudeSettings();
+  removeLullHooks(settings);
+  restoreSpinnerVerbs(settings);
+  fs.writeFileSync(CLAUDE_SETTINGS, `${JSON.stringify(settings, null, 2)}\n`, 'utf8');
+}
+
+function removeLullHooks(settings: ClaudeSettings): void {
+  if (!isPlainObject(settings.hooks)) return;
+  const hooks = settings.hooks as Record<string, unknown>;
+  const lullCommands = new Set(LULL_HOOKS.map(([, command]) => command));
+
+  for (const [eventName] of LULL_HOOKS) {
+    const eventHooks = hooks[eventName];
+    if (!Array.isArray(eventHooks)) continue;
+    const kept = eventHooks.filter(entry => !hookEntryIsLull(entry, lullCommands));
+    if (kept.length === 0) delete hooks[eventName];
+    else hooks[eventName] = kept;
+  }
+  if (Object.keys(hooks).length === 0) delete settings.hooks;
+}
+
+function hookEntryIsLull(entry: unknown, lullCommands: Set<string>): boolean {
+  if (!isPlainObject(entry)) return false;
+  const inner = (entry as Record<string, unknown>).hooks;
+  return Array.isArray(inner) && inner.some(item =>
+    isPlainObject(item) && lullCommands.has((item as Record<string, unknown>).command as string));
+}
+
+function restoreSpinnerVerbs(settings: ClaudeSettings): void {
+  if (fs.existsSync(SETTINGS_BACKUP)) {
+    try {
+      const raw = fs.readFileSync(SETTINGS_BACKUP, 'utf8').trim() || '{}';
+      const backup = JSON.parse(stripJsonComments(raw));
+      if (isPlainObject(backup) && 'spinnerVerbs' in backup) {
+        settings.spinnerVerbs = (backup as ClaudeSettings).spinnerVerbs;
+        return;
+      }
+    } catch {
+      // fall through to removing the key lull added
+    }
+  }
+  delete settings.spinnerVerbs;
 }
 
 function ensureHookScript(): void {
@@ -106,52 +148,12 @@ function addLullHooks(settings: ClaudeSettings): void {
   }
 }
 
-function removeLullHooks(settings: ClaudeSettings): void {
-  if (!isPlainObject(settings.hooks)) return;
-
-  const hooks = settings.hooks as Record<string, unknown>;
-  for (const eventName of Object.keys(hooks)) {
-    if (!Array.isArray(hooks[eventName])) continue;
-
-    const cleaned = (hooks[eventName] as unknown[])
-      .map(removeLullCommandsFromEntry)
-      .filter(entry => entry !== undefined);
-
-    if (cleaned.length > 0) {
-      hooks[eventName] = cleaned;
-    } else {
-      delete hooks[eventName];
-    }
-  }
-
-  if (Object.keys(hooks).length === 0) delete settings.hooks;
-}
-
-function removeLullCommandsFromEntry(entry: unknown): unknown | undefined {
-  if (!isPlainObject(entry)) return entry;
-
-  const record = entry as Record<string, unknown>;
-  if (!Array.isArray(record.hooks)) return entry;
-
-  const nextHooks = record.hooks.filter(command => !hookCommandHasMarker(command));
-  if (nextHooks.length === record.hooks.length) return entry;
-  if (nextHooks.length === 0 && Object.keys(record).every(key => key === 'matcher' || key === 'hooks')) return undefined;
-
-  return { ...record, hooks: nextHooks };
-}
-
 function hookEntryHasCommand(entry: unknown, command: string): boolean {
   if (!isPlainObject(entry)) return false;
   const hooks = (entry as Record<string, unknown>).hooks;
   return Array.isArray(hooks) && hooks.some(item => {
     return isPlainObject(item) && (item as Record<string, unknown>).command === command;
   });
-}
-
-function hookCommandHasMarker(command: unknown): boolean {
-  return isPlainObject(command)
-    && typeof (command as Record<string, unknown>).command === 'string'
-    && ((command as Record<string, string>).command).includes(HOOK_MARKER);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
