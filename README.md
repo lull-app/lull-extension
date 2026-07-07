@@ -12,7 +12,7 @@ lull shows a single, non-intrusive sponsor card in the VS Code sidebar while Cla
 
 ## Install
 
-1. Download `lull-0.1.0.vsix` from [Releases](https://github.com/lull-app/lull-extension/releases)
+1. Download `lull-0.1.1.vsix` from [Releases](https://github.com/lull-app/lull-extension/releases)
 2. In VS Code: `Extensions → ⋯ → Install from VSIX…`
 3. Click the lull icon in the Activity Bar
 
@@ -20,7 +20,7 @@ lull shows a single, non-intrusive sponsor card in the VS Code sidebar while Cla
 
 ## Privacy
 
-lull never reads your prompts, code, or AI responses.
+lull never reads or transmits your prompts, code, or AI responses. Activity is detected only via Claude Code lifecycle hooks (a local timestamp file) — never by reading your terminal or editor content.
 
 The only data sent:
 - Anonymous UUID (generated locally, resettable anytime)
@@ -42,7 +42,7 @@ No prompt tracking. No code access. No keystroke logging. Every claim is verifia
 
 Reach senior developers during high-focus AI work sessions. Logo, tagline, and CTA — not a text string.
 
-→ **[Start a $500 pilot](mailto:lull.extension@gmail.com?subject=lull%20Advertising%20Inquiry)**
+→ **[Start a pilot](mailto:lull.extension@gmail.com?subject=lull%20Advertising%20Inquiry)**
 
 ## Build from source
 

@@ -47,32 +47,34 @@ body{background:#0d0d10;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',
 .stat-n{font-size:13px;font-weight:600;color:#ccc}
 .stat-l{font-size:9px;color:#444;margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
 .session-label{font-size:9.5px;color:#333;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.demo-banner{font-size:9.5px;color:#8a6d2f;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;text-align:center}
 .payout-bar{background:#111;border:1px solid #1a1a1f;border-radius:6px;overflow:hidden;height:6px;margin-top:8px}
 .payout-fill{height:100%;background:linear-gradient(90deg,#c9a96e,#e8c07a);border-radius:6px;transition:width .4s}
 .payout-label{display:flex;justify-content:space-between;font-size:9px;color:#444;margin-top:4px}
 .hint{font-size:9.5px;color:#2a2a2f;text-align:center;margin-top:8px}
 </style></head><body>
+<div class="demo-banner">Demo Preview · simulated, no payouts yet</div>
 <div class="card">
   <div class="top">
-    <div class="amount">$${e}</div>
+    <div class="amount">$${e}<span style="font-size:10px;color:#555;font-weight:400"> (simulated)</span></div>
     <div class="dot"></div>
   </div>
   <div class="row">
     <div class="stat"><div class="stat-n">${imp}</div><div class="stat-l">Impressions</div></div>
-    <div class="stat"><div class="stat-n">$${(imp*0.015).toFixed(2)}</div><div class="stat-l">Earned</div></div>
+    <div class="stat"><div class="stat-n">$${(imp*0.015).toFixed(2)}</div><div class="stat-l">Simulated</div></div>
     <div class="stat"><div class="stat-n">${activeMin}m</div><div class="stat-l">Active</div></div>
   </div>
 </div>
 <div class="card">
-  <div class="session-label">Payout · USDC / Stripe</div>
+  <div class="session-label">Simulated payout · USDC / Stripe (not connected)</div>
   <div style="display:flex;justify-content:space-between;align-items:center">
     <span style="font-size:11px;color:#555">$${e}</span>
     <span style="font-size:11px;color:#555">$20.00</span>
   </div>
   <div class="payout-bar"><div class="payout-fill" style="width:${pct}%"></div></div>
-  <div class="payout-label"><span>${pct}%</span><span>min. payout</span></div>
+  <div class="payout-label"><span>${pct}%</span><span>min. payout (simulated)</span></div>
 </div>
-<div class="hint">Ads appear in your status bar ↓</div>
+<div class="hint">Ads appear in your status bar ↓ — demo mode, no real earnings yet</div>
 </body></html>`;
   }
 }

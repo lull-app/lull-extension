@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { AdViewProvider } from './adPanel';
-import { createDetector } from './detector';
 import { createHooksDetector } from './hooksDetector';
 import { installLullHooksAndSettings, restoreClaudeSettings } from './hooksInstaller';
 import { LullStatusBar } from './statusBar';
@@ -8,12 +7,42 @@ import { getOrCreateUuid, resetUuid, sendImpression } from './tracker';
 import { fetchAd, nextDemoAd } from './ads';
 import { currentSpinnerVerb } from './spinnerVerbs';
 
-export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
+const HOOKS_CONSENT_KEY = 'lull.hooksConsent';
+
+// Asks the user once before lull ever writes to ~/.claude/settings.json. The
+// decision is remembered in globalState so we don't ask again. Nothing is
+// written if the user declines, and nothing is written at all if lull is
+// disabled via the `lull.enabled` setting.
+async function ensureHooksConsent(ctx: vscode.ExtensionContext): Promise<void> {
+  const consent = ctx.globalState.get<'granted' | 'declined'>(HOOKS_CONSENT_KEY);
+  if (consent === 'declined') return;
+
+  if (consent !== 'granted') {
+    const choice = await vscode.window.showInformationMessage(
+      'lull would like to add a small activity hook to ~/.claude/settings.json so it can tell when Claude Code is generating (used only to show/hide the sponsor card). Allow?',
+      'Allow',
+      'No'
+    );
+    if (choice !== 'Allow') {
+      await ctx.globalState.update(HOOKS_CONSENT_KEY, 'declined');
+      return;
+    }
+    await ctx.globalState.update(HOOKS_CONSENT_KEY, 'granted');
+  }
+
   try {
     installLullHooksAndSettings(currentSpinnerVerb());
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     vscode.window.showWarningMessage(`lull: Claude settings were not updated. ${message}`);
+  }
+}
+
+export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
+  const enabled = () => vscode.workspace.getConfiguration('lull').get<boolean>('enabled', true);
+
+  if (enabled()) {
+    await ensureHooksConsent(ctx);
   }
 
   // Earnings dashboard panel (sidebar)
@@ -55,8 +84,6 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
 
   const uuid = getOrCreateUuid(ctx);
   const backendUrl = () => vscode.workspace.getConfiguration('lull').get<string>('backendUrl', '');
-  const enabled = () => vscode.workspace.getConfiguration('lull').get<boolean>('enabled', true);
-  const sourceActive = { hooks: false, terminal: false };
   let combinedActive = false;
   let changeToken = 0;
 
@@ -75,19 +102,15 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     }
   };
 
-  const updateSource = (source: keyof typeof sourceActive, active: boolean) => {
-    sourceActive[source] = active;
-    const nextCombined = sourceActive.hooks || sourceActive.terminal;
-    if (nextCombined === combinedActive) return;
-    combinedActive = nextCombined;
-    void applyActivity(nextCombined);
+  const updateSource = (active: boolean) => {
+    if (active === combinedActive) return;
+    combinedActive = active;
+    void applyActivity(active);
   };
 
-  const hooksDetector = createHooksDetector(active => updateSource('hooks', active));
-  const detector = createDetector(active => updateSource('terminal', active));
+  const hooksDetector = createHooksDetector(active => updateSource(active));
 
   ctx.subscriptions.push(hooksDetector);
-  ctx.subscriptions.push(detector);
 }
 
 export function deactivate(): void {
