@@ -1,0 +1,34 @@
+name: Claude Code Security Review
+
+# Läuft auf jeden PR gegen main und reviewt den Diff auf Sicherheitsprobleme
+# (Secrets, Injection, Auth-Lücken etc.) via Anthropics offizieller Action.
+#
+# Voraussetzung: das Repo-Secret ANTHROPIC_API_KEY muss unter
+# Settings -> Secrets and variables -> Actions hinterlegt sein. Ohne das
+# Secret schlägt der Lauf fehl.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  security-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Run Claude Code Security Review
+        # Auf einen Commit gepinnt, nicht auf @main. Ein beweglicher Branch
+        # heisst: wer den Branch aendert, laesst hier Code mit
+        # pull-requests-write laufen, ohne dass wir etwas merken.
+        uses: anthropics/claude-code-security-review@0c6a49f1fa56a1d472575da86a94dbc1edb78eda # Stand 2026-02-11
+        with:
+          claude-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          comment-pr: true
